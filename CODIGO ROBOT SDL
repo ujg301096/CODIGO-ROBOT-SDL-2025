@@ -1,0 +1,135 @@
+// Alumno: Ulises Gutierrez - Tec. Universitaria de Robótica orientada a simulación y competencia - UPATECO
+const int ENA = 5;
+const int IN1 = 7;
+const int IN2 = 8;
+
+const int ENB = 6;
+const int IN3 = 9;
+const int IN4 = 10;
+
+const int sensorIzq = A0;
+const int sensorDer = A1;
+
+const int boton = 2;
+const int led = 13;
+
+int velRecto = 95; 
+int velGiro  = 90; 
+
+bool invertLeft  = false;
+bool invertRight = true;
+
+
+void setup() {
+  pinMode(ENA, OUTPUT); pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT); pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
+
+  pinMode(sensorIzq, INPUT);
+  pinMode(sensorDer, INPUT);
+
+  pinMode(boton, INPUT_PULLUP); 
+  pinMode(led, OUTPUT);
+  digitalWrite(led, LOW);
+
+  detenerMotores();
+  Serial.begin(9600);
+  Serial.println("Robot listo. Presione boton para iniciar.");
+}
+
+void loop() {
+  if (digitalRead(boton) == LOW) {
+    iniciarSecuencia();
+  }
+}
+
+void iniciarSecuencia() {
+  Serial.println("Boton presionado - inicio en 5s");
+
+  for (int i = 0; i < 10; i++) {
+    digitalWrite(led, HIGH);
+    delay(250);
+    digitalWrite(led, LOW);
+    delay(250);
+   
+  }
+  digitalWrite(led, HIGH);
+  Serial.println("Inicio: robot en marcha.");
+  seguirLinea();
+}
+
+bool emergenciaActiva() {
+  return (digitalRead(boton) == LOW);
+}
+
+void seguirLinea() {
+  while (true) {
+
+    if (emergenciaActiva()) {
+      Serial.println("STOP.");
+      detenerMotores();
+      digitalWrite(led, LOW);
+      delay(200);
+      while (digitalRead(boton) == LOW) { delay(20); } 
+      Serial.println("REBOOT.");
+      return;
+    }
+
+    int izq = digitalRead(sensorIzq);
+    int der = digitalRead(sensorDer);
+
+    Serial.print("S.Izq:"); Serial.print(izq);
+    Serial.print(" S.Der:"); Serial.println(der);
+
+    if (izq == 0 && der == 0) {
+      adelante();
+    }
+    else if (izq == 1 && der == 0) {
+      giraIzquierda();
+    }
+    else if (izq == 0 && der == 1) {
+      giraDerecha();
+    }
+    else {
+      detenerMotores();
+    }
+
+    delay(5);
+  }
+}
+
+void setLeftForward() {
+  if (!invertLeft) { digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); }
+  else            { digitalWrite(IN1, LOW);  digitalWrite(IN2, HIGH); }
+}
+void setLeftBackward() {
+  if (!invertLeft) { digitalWrite(IN1, LOW);  digitalWrite(IN2, HIGH); }
+  else            { digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); }
+}
+void setRightForward() {
+  if (!invertRight){ digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW); }
+  else            { digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH); }
+}
+void setRightBackward() {
+  if (!invertRight){ digitalWrite(IN3, LOW);  digitalWrite(IN4, HIGH); }
+  else            { digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW); }
+}
+
+void adelante() {
+  setLeftForward(); setRightForward();
+  analogWrite(ENA, velRecto);
+  analogWrite(ENB, velRecto);
+}
+void giraIzquierda() {
+  setLeftForward(); setRightForward();
+  analogWrite(ENA, velGiro); analogWrite(ENB, velRecto);
+}
+void giraDerecha() {
+  setLeftForward(); setRightForward();
+  analogWrite(ENA, velRecto); analogWrite(ENB, velGiro);
+}
+void detenerMotores() {
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+}
